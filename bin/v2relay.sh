@@ -197,6 +197,7 @@ best() {
     local virtualPort=$(perl -lne "print if /BEGIN virtual port/../END virtual port/" ${etc_root}/v2frontend.json | grep "\"port\"" | grep -o '[0-9][0-9]*')
     echo "virtualPort: ${virtualPort}"
 
+    _clearRule
     _addRule ${virtualPort} ${bestPort}
 }
 
@@ -239,7 +240,7 @@ _addRule() {
 _clearRule() {
     echo "Clear rule..."
     # delete reference
-    _tabEcho "Delete reference"
+    echo "Delete reference"
     #如果有多条的话，要从index大的开始删除，否则会报index越界错误,所以要sort -r倒序；因为删除小的后，大的index会变小
     _runAsRoot "${firewallCMD} -t nat -n --line-numbers -L OUTPUT | grep ${tbl} | grep -o '^[0-9][0-9]*' | sort -r | xargs -n 1 ${firewallCMD} -t nat -D OUTPUT"
     _runAsRoot "${firewallCMD} -t nat -n --line-numbers -L PREROUTING | grep ${tbl} | grep -o '^[0-9][0-9]*' | sort -r | xargs -n 1 ${firewallCMD} -t nat -D PREROUTING"
