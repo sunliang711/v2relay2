@@ -1,0 +1,9 @@
+.DS_Store
+*.swp
+.idea/
+/fastestPort
+/fetcher
+/v2ray
+/etc/old-backends
+/etc/v2backend.json
+/net-traffic

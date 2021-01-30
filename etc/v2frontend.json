@@ -1,0 +1,217 @@
+{
+    "log": {
+        "access": "/tmp/v2relay-frontend.log",
+        "error": "/tmp/v2relay-frontend.log",
+        "loglevel": "info"
+    },
+    "inbounds": [
+        {
+            "tag": "vmess:8022:",
+            "port": 8022,
+            "protocol": "vmess",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "e2791dbb-f340-4a71-998a-da3b184a1cef",
+                        "alterId": 64
+                    }
+                ]
+            },
+            "streamSettings": {
+                "network": "ws"
+            }
+        },
+        {
+            "tag": "http:8021:",
+            "protocol": "http",
+            "port": 8021,
+            "settings": {
+                "accounts": [
+                    {
+                        "user": "user",
+                        "pass": "usernopass"
+                    },
+                    {
+                        "user": "user2",
+                        "pass": "user2nopass"
+                    }
+                ],
+                "timeout": 0,
+                "userLevel": 0,
+                "allowTransparent": false
+            },
+            "sniffing": {
+                "enabled": true,
+                "destOverride": [
+                    "http",
+                    "tls"
+                ]
+            }
+        },
+        {
+            "tag": "socks5:8020:",
+            "protocol": "socks",
+            "port": 8020,
+            "settings": {
+                "udp": true,
+                "auth": "password",
+                "accounts": [
+                    {
+                        "user": "user",
+                        "pass": "usernopass"
+                    },
+                    {
+                        "user": "user2",
+                        "pass": "user2nopass"
+                    }
+                ],
+                "userLevel": 0,
+                "ip": "0.0.0.0",
+                "udp": true
+            },
+            "sniffing": {
+                "enabled": true,
+                "destOverride": [
+                    "http",
+                    "tls"
+                ]
+            }
+        },
+        {
+            "tag": "http:8031:",
+            "protocol": "http",
+            "port": 8031,
+            "settings": {
+                "timeout": 0,
+                "userLevel": 0,
+                "allowTransparent": false
+            },
+            "sniffing": {
+                "enabled": true,
+                "destOverride": [
+                    "http",
+                    "tls"
+                ]
+            }
+        },
+        {
+            "tag": "socks5-noauth:8030:",
+            "protocol": "socks",
+            // BEGIN transparent
+            "port": 8030,
+            // END transparent
+            "settings": {
+                "udp": true,
+                "auth": "noauth",
+                "userLevel": 0,
+                "ip": "0.0.0.0",
+                "udp": true
+            },
+            "sniffing": {
+                "enabled": true,
+                "destOverride": [
+                    "http",
+                    "tls"
+                ]
+            }
+        },
+        {
+            "tag": "ss:8000:nicoleFriend",
+            "protocol": "shadowsocks",
+            "port": 8000,
+            "settings": {
+                "method": "aes-256-cfb",
+                "password": "8000",
+                "udp": true,
+                "level": 0,
+                "ota": false
+            }
+        },
+        {
+            "tag": "ss:8001:nicole",
+            "protocol": "shadowsocks",
+            "port": 8001,
+            "settings": {
+                "method": "aes-256-cfb",
+                "password": "8001b",
+                "udp": true,
+                "level": 0,
+                "ota": false
+            }
+        },
+        {
+            "tag": "ss:8002:chuan",
+            "protocol": "shadowsocks",
+            "port": 8002,
+            "settings": {
+                "method": "aes-256-cfb",
+                "password": "8002",
+                "udp": true,
+                "level": 0,
+                "ota": false
+            }
+        },
+        {
+            "tag": "ss:8003:nouser",
+            "protocol": "shadowsocks",
+            "port": 8003,
+            "settings": {
+                "method": "aes-256-cfb",
+                "password": "aaxc8003!!",
+                "udp": true,
+                "level": 0,
+                "ota": false
+            }
+        },
+        {
+            "tag": "ss:8004:xiangge",
+            "protocol": "shadowsocks",
+            "port": 8004,
+            "settings": {
+                "method": "aes-256-cfb",
+                "password": "8004d",
+                "udp": true,
+                "level": 0,
+                "ota": false
+            }
+        },
+        {
+            "tag": "ss:8005:eagle",
+            "protocol": "shadowsocks",
+            "user": "me",
+            "port": 8005,
+            "settings": {
+                "method": "aes-256-cfb",
+                "password": "8005e",
+                "udp": true,
+                "level": 0,
+                "ota": false
+            }
+        },
+        {
+            "tag": "ss:8006:wei",
+            "protocol": "shadowsocks",
+            "port": 8006,
+            "settings": {
+                "method": "aes-256-cfb",
+                "password": "800f6",
+                "udp": true,
+                "level": 0,
+                "ota": false
+            }
+        }
+    ],
+    "outbound": {
+        "protocol": "socks",
+        "settings": {
+            "servers": [
+                {
+                    "address": "localhost",
+                    // BEGIN virtual port
+                    "port": 8888
+                    // END virtual port
+                }
+            ]
+        }
+    }
+}

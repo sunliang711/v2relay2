@@ -1,0 +1,19 @@
+[Unit]
+Description=v2frontend service
+#After=network.target
+
+[Service]
+Type=simple
+ExecStartPre=<START_PRE>
+ExecStart=<START>
+ExecStartPost=<START_POST>
+
+#ExecStop=
+ExecStopPost=<STOP_POST>
+
+User=<USER>
+WorkingDirectory=<PWD>
+Restart=always
+#Environment=
+[Install]
+WantedBy=multi-user.target
