@@ -121,6 +121,7 @@ _start_backend_pre() {
         echo "No etc/v2backend.json file."
         exit 1
     fi
+    grep 'BEGIN outbound address:' ${this}/../etc/v2backend.json | awk -F: '{print $2}' | sort | uniq >/tmp/outboundAddress
 }
 
 _start_backend_post() {

@@ -83,8 +83,17 @@ fi
 # write your code below (just define function[s])
 # function is hidden when begin with '_'
 ###############################################################################
+_need(){
+    local cmd=${1}
+    if ! command -v $cmd >/dev/null 2>&1;then
+        echo "need $cmd"
+        exit 1
+    fi
+}
 
 install() {
+    _need unzip
+
     cat msg
     _installV2ray
     _installFetcher
@@ -183,7 +192,7 @@ ${bold}CMD${reset}:
 EOF2
     # perl -lne 'print "\t$1" if /^\s*(\w+)\(\)\{$/' $(basename ${BASH_SOURCE})
     # perl -lne 'print "\t$2" if /^\s*(function)?\s*(\w+)\(\)\{$/' $(basename ${BASH_SOURCE}) | grep -v '^\t_'
-    perl -lne 'print "\t$2" if /^\s*(function)?\s*(\w+)\(\)\{$/' $(basename ${BASH_SOURCE}) | perl -lne "print if /^\t[^_]/"
+    perl -lne 'print "\t$2" if /^\s*(function)?\s*(\w+)\(\)\s*\{$/' $(basename ${BASH_SOURCE}) | perl -lne "print if /^\t[^_]/"
 }
 
 case "$1" in
