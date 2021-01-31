@@ -1,7 +1,7 @@
 .DS_Store
 *.swp
 .idea/
-/fastestPort
+/fastest-port
 /fetcher
 /v2ray
 /etc/old-backends

@@ -119,11 +119,11 @@ _installFetcher() {
 
 _installFastestPort() {
     cd ${this}
-    if [ -d fastestPort ]; then
-        echo "Already exist fastestPort,skip"
+    if [ -d fastest-port ]; then
+        echo "Already exist fastest-port,skip"
         return
     fi
-    echo "Install fastestPort..."
+    echo "Install fastest-port..."
     curl -fsSL https://gitee.com/sunliang711/fastest-port/raw/master/install.sh | bash -s install ${this}
 }
 
@@ -167,8 +167,8 @@ uninstall() {
     /bin/rm -rf fetcher
     echo "Remove v2ray..."
     /bin/rm -rf v2ray
-    echo "Remove fastestPort..."
-    /bin/rm -rf fastestPort
+    echo "Remove fastest-port..."
+    /bin/rm -rf fastest-port
 
     echo "Remote v2frontend.service"
     _runAsRoot "/bin/rm -rf /etc/systemd/system/v2frontend.service"

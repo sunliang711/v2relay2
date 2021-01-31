@@ -89,7 +89,7 @@ fi
 v2relay_root=${this}/..
 fetcher_root=${v2relay_root}/fetcher
 v2ray_root=${v2relay_root}/v2ray
-fastestPort_root=${v2relay_root}/fastestPort
+fastestPort_root=${v2relay_root}/fastest-port
 template_root=${v2relay_root}/template
 etc_root=${v2relay_root}/etc
 scripts_root=${v2relay_root}/scripts
@@ -159,29 +159,29 @@ status() {
 }
 
 best() {
-    # 读取fastestPort的配置文件，获取它需要的输入文件路径
+    # 读取fastest-port的配置文件，获取它需要的输入文件路径
     local fastestInputFile="$(perl -lne 'print $1 if /portFile=\"(.+)\"/' ${fastestPort_root}/config.toml)"
     if [ -z "${fastestInputFile}" ]; then
-        echo "Cannot find fastestPort input file.Check it's config file!!"
+        echo "Cannot find fastest-port input file.Check it's config file!!"
         exit 1
     fi
 
-    # 读取fastestPort的配置文件，获取它需要的输出文件路径
+    # 读取fastest-port的配置文件，获取它需要的输出文件路径
     local fastestOutputFile="$(perl -lne 'print $1 if/resultFile=\"(.+)\"/' ${fastestPort_root}/config.toml)"
     if [ -z "${fastestOutputFile}" ]; then
-        echo "Cannot find fastestPort output file.Check it's config file!!"
+        echo "Cannot find fastest-port output file.Check it's config file!!"
         exit 1
     fi
 
-    # 构造fastestPort的输入文件
+    # 构造fastest-port的输入文件
     perl -lne 'print $1 if/"BEGIN port":"([^"]+)"/' ${v2relay_root}/etc/v2backend.json >"${fastestInputFile}"
-    echo "fastestPort input file: ${fastestInputFile}"
+    echo "fastest-port input file: ${fastestInputFile}"
     cat ${fastestInputFile}
-    echo "fastestPort output file: ${fastestOutputFile}"
+    echo "fastest-port output file: ${fastestOutputFile}"
 
-    (cd ${fastestPort_root} && ./fastestPort -c config.toml)
+    (cd ${fastestPort_root} && ./fastest-port -c config.toml)
 
-    echo "[fastestPort result]:"
+    echo "[fastest-port result]:"
     cat ${fastestOutputFile}
 
     local separator='`'
