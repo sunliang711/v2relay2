@@ -17,12 +17,13 @@ need(){
 
 install(){
     dest=${1:?'missing install location'}
-    dest=${dest}/v2ray
-
-    if [ -d ${dest} ];then
-        echo "Already exist ${dest},skip"
-        exit 1
+    if [ ! -d ${dest} ];then
+        echo "Create ${dest}"
+        mkdir -p ${dest}
     fi
+    dest="$(cd ${dest} && pwd)"
+    echo "install location: $dest"
+    version=${2:-4.34.0}
 
     need curl
     need unzip
@@ -34,35 +35,34 @@ install(){
     fi
     cd "$downloadDir"
 
-    version=4.32.1
     case $(uname) in
         Darwin)
-            url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/MacOS/v2ray-macos.zip"
+            # url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/MacOS/v2ray-macos.zip"
+            url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/v2ray-macos-64.zip"
             zipfile=${url##*/}
             ;;
         Linux)
-            url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/Linux/v2ray-linux-64.zip"
+            # url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/Linux/v2ray-linux-64.zip"
+            url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/v2ray-linux-64.zip"
             zipfile=${url##*/}
             ;;
     esac
 
     # rasperberry arm64
     if [ $(uname -m) == "aarch64" ];then
-        url=https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/Linux/v2ray-linux-arm64-v8a.zip
+        # url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/Linux/v2ray-linux-arm64-v8a.zip"
+        url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/v2ray-linux-arm64-v8a.zip"
         zipfile=${url##*/}
     fi
 
-    if [ -d "$dest" ];then
-        rm -rf "$dest"
-    fi
-    mkdir "$dest"
-
     if [ ! -e "$zipfile" ];then
         curl -LO "$url" || { echo "download $zipfile error"; exit 1; }
+    else
+        echo "Use ${downloadDir}/$zipfile cache file"
     fi
 
     echo "unzip zipfile: $zipfile..."
-    unzip -d "$dest" "$zipfile"
+    unzip -d "$dest/v2ray" "$zipfile"
 
 }
 
