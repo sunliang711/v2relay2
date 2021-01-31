@@ -112,6 +112,9 @@ function _addWatchPorts() {
         # echo "type: ${typ}"
         # echo "port: ${port}"
         # echo "remark: ${remark}"
+        if [ -z "${port}" ];then
+            continue
+        fi
         cmd=$(cat <<EOF
             if ! iptables -L OUTPUT -n --line-numbers 2>/dev/null | grep -qP "spt:$port\b";then
                 echo "Add port: $port to OUTPUT"
