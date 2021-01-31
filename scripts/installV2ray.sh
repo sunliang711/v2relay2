@@ -23,7 +23,7 @@ install(){
     fi
     dest="$(cd ${dest} && pwd)"
     echo "install location: $dest"
-    version=${2:-4.34.0}
+    version=${2:-4.32.1}
 
     need curl
     need unzip
@@ -37,13 +37,13 @@ install(){
 
     case $(uname) in
         Darwin)
-            # url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/MacOS/v2ray-macos.zip"
-            url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/v2ray-macos-64.zip"
+            url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/MacOS/v2ray-macos.zip"
+            # url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/v2ray-macos-64.zip"
             zipfile=${url##*/}
             ;;
         Linux)
-            # url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/Linux/v2ray-linux-64.zip"
-            url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/v2ray-linux-64.zip"
+            url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/Linux/v2ray-linux-64.zip"
+            # url="https://source711.oss-cn-shanghai.aliyuncs.com/v2ray/${version}/v2ray-linux-64.zip"
             zipfile=${url##*/}
             ;;
     esac
