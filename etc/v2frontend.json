@@ -22,7 +22,7 @@
             }
         },
         {
-            "tag": "http:8021:",
+            "tag": "http-auth:8021:",
             "protocol": "http",
             "port": 8021,
             "settings": {
@@ -49,7 +49,7 @@
             }
         },
         {
-            "tag": "socks5:8020:",
+            "tag": "socks5-auth:8020:",
             "protocol": "socks",
             "port": 8020,
             "settings": {
@@ -78,7 +78,7 @@
             }
         },
         {
-            "tag": "http:8031:",
+            "tag": "http-noauth:8031:",
             "protocol": "http",
             "port": 8031,
             "settings": {
