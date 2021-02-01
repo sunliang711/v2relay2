@@ -47,11 +47,11 @@ _runAsRoot() {
     cmd="${*}"
     local rootID=0
     if [ "${EUID}" -ne "${rootID}" ]; then
-        echo -n "Not root, try to run as root.."
+        # echo -n "Not root, try to run as root.."
         # or sudo sh -c ${cmd} ?
         # if eval "sudo ${cmd}";then
         if sudo sh -c "${cmd}"; then
-            echo "ok"
+            # echo "ok"
             return 0
         else
             echo "failed"
@@ -94,28 +94,45 @@ template_root=${v2relay_root}/template
 etc_root=${v2relay_root}/etc
 scripts_root=${v2relay_root}/scripts
 
-tbl=redir_chain
+redir_chain=redir_chain
 firewallCMD=iptables
 beginCron="#begin v2relay cron"
 endCron="#end v2relay cron"
 
+logfile=/tmp/v2relay.log
+_redir_log(){
+    exec 3>&1
+    exec 4>&2
+    exec 1>>${logfile}
+    exec 2>>${logfile}
+}
+
+_restore(){
+    exec 1>&3 3>&-
+    exec 2>&4 4>&-
+}
+
 _start_frontend_pre() {
+    _redir_log
     echo "start frontend pre..."
     ${scripts_root}/traffic.sh _addWatchPorts
 }
 
 _start_frontend_post() {
+    _redir_log
     echo "start frontend post"
     _addCron
 }
 
 _stop_frontend_post() {
+    _redir_log
     echo "stop frontend post..."
     ${scripts_root}/traffic.sh _delWatchPorts
     _delCron
 }
 
 _start_backend_pre() {
+    _redir_log
     echo "start v2backend pre..."
     if [ ! -e ${this}/../etc/v2backend.json ]; then
         echo "No etc/v2backend.json file."
@@ -125,24 +142,29 @@ _start_backend_pre() {
 }
 
 _start_backend_post() {
+    _redir_log
     echo "start v2backend post..."
     best
 }
 
 _stop_backend_post() {
+    _redir_log
     _clearRule
 }
 
 start() {
+    _redir_log
     echo "Start v2frontend..."
-    _runAsRoot "systemctl start v2frontend &"
+    _runAsRoot "systemctl start v2frontend"
     echo "Start v2backend..."
-    _runAsRoot "systemctl start v2backend &"
+    _runAsRoot "systemctl start v2backend"
 
-    _runAsRoot "journalctl -u v2backend -f"
+    # TODO
+    # tail -f ${logfile}
 }
 
 stop() {
+    _redir_log
     echo "Stop v2frontend..."
     _runAsRoot "systemctl stop v2frontend"
     echo "Stop v2backend..."
@@ -159,6 +181,8 @@ status() {
 }
 
 best() {
+    _redir_log
+    echo "best..."
     # 读取fastest-port的配置文件，获取它需要的输入文件路径
     local fastestInputFile="$(perl -lne 'print $1 if /portFile=\"(.+)\"/' ${fastestPort_root}/config.toml)"
     if [ -z "${fastestInputFile}" ]; then
@@ -203,6 +227,7 @@ best() {
 }
 
 check() {
+    _redir_log
     echo -n "$(date +%FT%T) check..."
     local virtualPort=$(perl -lne "print if /BEGIN virtual port/../END virtual port/" ${etc_root}/v2frontend.json | grep "\"port\"" | grep -o '[0-9][0-9]*')
     if curl -s -x socks5://localhost:${virtualPort} --retry 2 ifconfig.me >/dev/null 2>&1; then
@@ -214,48 +239,51 @@ check() {
 }
 
 _addRule() {
+    _redir_log
     local srcPort=${1:?'missing src port'}
     local destPort=${2:?'missing dest port'}
     echo "Add rule: redirect ${srcPort} to ${destPort}"
     # new
-    echo "New chain: ${tbl}"
-    _runAsRoot "${firewallCMD} -t nat -N ${tbl}"
+    echo "  1.> New chain: ${redir_chain}"
+    _runAsRoot "${firewallCMD} -t nat -N ${redir_chain}"
 
     # echo "after new chain"
     # _runAsRoot "${firewallCMD} -t nat -n --line-numbers -L"
 
-    echo "Add rule to chain: ${tbl} with destPort: $destPort"
-    _runAsRoot "${firewallCMD} -t nat -A ${tbl} -p tcp --dport ${srcPort} -j REDIRECT --to-ports ${destPort}"
+    echo "  2.> Add redir rule to chain: ${redir_chain} ($srcPort -> $destPort)"
+    _runAsRoot "${firewallCMD} -t nat -A ${redir_chain} -p tcp --dport ${srcPort} -j REDIRECT --to-ports ${destPort}"
     # echo "after add rule to chain"
     # _runAsRoot "${firewallCMD} -t nat -n --line-numbers -L"
 
     # reference
-    echo "Reference chain: ${tbl}"
-    _runAsRoot "${firewallCMD} -t nat -A OUTPUT -p tcp --dport ${srcPort} -j ${tbl}"
-    _runAsRoot "${firewallCMD} -t nat -A PREROUTING -p tcp --dport ${srcPort} -j ${tbl}"
+    echo "  3.> Reference chain: ${redir_chain}"
+    _runAsRoot "${firewallCMD} -t nat -A OUTPUT -p tcp --dport ${srcPort} -j ${redir_chain}"
+    _runAsRoot "${firewallCMD} -t nat -A PREROUTING -p tcp --dport ${srcPort} -j ${redir_chain}"
 
     # echo "after reference"
     # _runAsRoot "${firewallCMD} -t nat -n --line-numbers -L"
 }
 
 _clearRule() {
+    _redir_log
     echo "Clear rule..."
     # delete reference
-    echo "Delete reference"
+    echo "  1.> Delete reference"
     #如果有多条的话，要从index大的开始删除，否则会报index越界错误,所以要sort -r倒序；因为删除小的后，大的index会变小
-    _runAsRoot "${firewallCMD} -t nat -n --line-numbers -L OUTPUT | grep ${tbl} | grep -o '^[0-9][0-9]*' | sort -r | xargs -n 1 ${firewallCMD} -t nat -D OUTPUT"
-    _runAsRoot "${firewallCMD} -t nat -n --line-numbers -L PREROUTING | grep ${tbl} | grep -o '^[0-9][0-9]*' | sort -r | xargs -n 1 ${firewallCMD} -t nat -D PREROUTING"
+    _runAsRoot "${firewallCMD} -t nat -n --line-numbers -L OUTPUT | grep ${redir_chain} | grep -o '^[0-9][0-9]*' | sort -r | xargs -n 1 ${firewallCMD} -t nat -D OUTPUT"
+    _runAsRoot "${firewallCMD} -t nat -n --line-numbers -L PREROUTING | grep ${redir_chain} | grep -o '^[0-9][0-9]*' | sort -r | xargs -n 1 ${firewallCMD} -t nat -D PREROUTING"
 
     #flush
-    echo "Flush chain: ${tbl}"
-    _runAsRoot "${firewallCMD} -t nat -F ${tbl}"
+    echo "  2.> Flush chain: ${redir_chain}"
+    _runAsRoot "${firewallCMD} -t nat -F ${redir_chain}"
 
     #delete
-    echo "Delete chain: ${tbl}"
-    _runAsRoot "${firewallCMD} -t nat -X ${tbl}"
+    echo "  3.> Delete chain: ${redir_chain}"
+    _runAsRoot "${firewallCMD} -t nat -X ${redir_chain}"
 }
 
 _addCron() {
+    _redir_log
     local tmpCron=/tmp/cron.tmp$(date +%FT%T)
     if crontab -l 2>/dev/null | grep -q "${beginCron}"; then
         echo "Already exist,quit."
@@ -266,9 +294,9 @@ _addCron() {
 	# NOTE!! saveHour saveDay need run iptables with sudo,
 	# so make sure you can run iptables with sudo no passwd
 	# or you are root
-	# 0 * * * * ${this}/port.sh saveHour
-	# 59 23 * * * ${this}/port.sh saveDay
-	# 
+	0 * * * * ${this}/v2relay.sh traffic saveHour
+	59 23 * * * ${this}/v2relay.sh traffic saveDay
+	#
     # 高峰时段
 	# Peek Hour: 9-23,0-2 
 	5 9-23,0-2 * * * ${this}/v2relay.sh best >>/tmp/best.log 2>&1
@@ -288,6 +316,7 @@ _addCron() {
 }
 
 _delCron() {
+    _redir_log
     (crontab -l 2>/dev/null | sed -e "/${beginCron}/,/${endCron}/d") | crontab -
 }
 
@@ -296,6 +325,7 @@ log() {
 }
 
 fetchSub() {
+    _redir_log
     cd ${fetcher_root}
     ./fetcher fetch
 

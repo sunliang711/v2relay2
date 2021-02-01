@@ -95,6 +95,19 @@ etc_root=${v2relay_root}/etc
 
 dest=${v2relay_root}/net-traffic
 
+logfile=/tmp/v2relay.log
+_redir_log(){
+    exec 3>&1
+    exec 4>&2
+    exec 1>>${logfile}
+    exec 2>>${logfile}
+}
+
+_restore(){
+    exec 1>&3 3>&-
+    exec 2>&4 4>&-
+}
+
 _tags() {
     tags="$(perl -lne 'print $1 if /\"tag\"\s*:\s*\"(.+)\"/' ${etc_root}/v2frontend.json)"
     echo "$tags"
@@ -102,6 +115,7 @@ _tags() {
 
 # 增加port到iptables里监听流量
 function _addWatchPorts() {
+    _redir_log
     echo "_addWatchPorts..."
     local tags="$(_tags)"
     for tag in ${tags}; do
@@ -132,6 +146,7 @@ EOF
 
 # 删除iptables里的流量监听
 function _delWatchPorts() {
+    _redir_log
     echo "_delWatchPorts..."
     local tags="$(_tags)"
     for tag in ${tags}; do
@@ -225,6 +240,7 @@ day(){
 
 #zero counter in iptables
 _zero(){
+    _redir_log
     local tags="$(_tags)"
     for tag in ${tags}; do
         # echo "t: ${tag}"
