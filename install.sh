@@ -94,6 +94,8 @@ _need(){
 install() {
     _need unzip
 
+    cat ${this}/msg
+
     cat msg
     _installV2ray
     _installFetcher
@@ -105,7 +107,11 @@ install() {
 
 _installV2ray() {
     echo "Install v2ray..."
-    ${this}/scripts/installV2ray.sh ${this}
+    ${this}/scripts/installV2ray.sh ${this} || { echo "Install v2ray failed"; exit 1; }
+    if [ ! -e ${this}/v2ray/v2ray ];then
+        echo "${RED}Install v2ray failed!${NORMAL}"
+        exit 1
+    fi
 }
 
 _installFetcher() {

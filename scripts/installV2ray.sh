@@ -62,7 +62,7 @@ install(){
     fi
 
     echo "unzip zipfile: $zipfile..."
-    unzip -d "$dest/v2ray" "$zipfile"
+    unzip -d "$dest/v2ray" "$zipfile" || { echo "Extract v2ray zip file error"; exit 1; }
 
 }
 
