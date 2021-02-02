@@ -212,6 +212,12 @@
                     // END virtual port
                 }
             ]
+        },
+        "streamSettings": {
+            "sockopt": {
+                // for transparent proxy
+                "mark": 255
+            }
         }
     }
 }
