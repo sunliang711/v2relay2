@@ -115,7 +115,6 @@ _tags() {
 
 # 增加port到iptables里监听流量
 function _addWatchPorts() {
-    _redir_log
     echo "_addWatchPorts..."
     local tags="$(_tags)"
     for tag in ${tags}; do
@@ -146,7 +145,6 @@ EOF
 
 # 删除iptables里的流量监听
 function _delWatchPorts() {
-    _redir_log
     echo "_delWatchPorts..."
     local tags="$(_tags)"
     for tag in ${tags}; do
@@ -240,7 +238,6 @@ day(){
 
 #zero counter in iptables
 _zero(){
-    _redir_log
     local tags="$(_tags)"
     for tag in ${tags}; do
         # echo "t: ${tag}"
