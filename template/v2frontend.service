@@ -14,6 +14,10 @@ ExecStopPost=<STOP_POST>
 User=<USER>
 WorkingDirectory=<PWD>
 Restart=always
+# NOTE
+# IMPORTANT
+# solve: failed to set SO_MARK for transparent proxy
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
 #Environment=
 [Install]
 WantedBy=multi-user.target
