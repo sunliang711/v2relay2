@@ -107,32 +107,28 @@ _redir_log(){
     exec 2>>${logfile}
 }
 
-_restore(){
+_restore_log(){
     exec 1>&3 3>&-
     exec 2>&4 4>&-
 }
 
 _start_frontend_pre() {
-    _redir_log
     echo "start frontend pre..."
     ${scripts_root}/traffic.sh _addWatchPorts
 }
 
 _start_frontend_post() {
-    _redir_log
     echo "start frontend post"
     _addCron
 }
 
 _stop_frontend_post() {
-    _redir_log
     echo "stop frontend post..."
     ${scripts_root}/traffic.sh _delWatchPorts
     _delCron
 }
 
 _start_backend_pre() {
-    _redir_log
     echo "start v2backend pre..."
     if [ ! -e ${this}/../etc/v2backend.json ]; then
         echo "No etc/v2backend.json file."
@@ -142,29 +138,24 @@ _start_backend_pre() {
 }
 
 _start_backend_post() {
-    _redir_log
     echo "start v2backend post..."
     best
 }
 
 _stop_backend_post() {
-    _redir_log
     _clearRule
 }
 
 start() {
-    _redir_log
     echo "Start v2frontend..."
-    _runAsRoot "systemctl start v2frontend"
+    _runAsRoot "systemctl start v2frontend&"
     echo "Start v2backend..."
-    _runAsRoot "systemctl start v2backend"
+    _runAsRoot "systemctl start v2backend&"
 
-    # TODO
-    # tail -f ${logfile}
+    _runAsRoot "journalctl -u v2backend -f"
 }
 
 stop() {
-    _redir_log
     echo "Stop v2frontend..."
     _runAsRoot "systemctl stop v2frontend"
     echo "Stop v2backend..."
@@ -181,7 +172,6 @@ status() {
 }
 
 best() {
-    _redir_log
     echo "best..."
     # 读取fastest-port的配置文件，获取它需要的输入文件路径
     local fastestInputFile="$(perl -lne 'print $1 if /portFile=\"(.+)\"/' ${fastestPort_root}/config.toml)"
@@ -227,7 +217,6 @@ best() {
 }
 
 check() {
-    _redir_log
     echo -n "$(date +%FT%T) check..."
     local virtualPort=$(perl -lne "print if /BEGIN virtual port/../END virtual port/" ${etc_root}/v2frontend.json | grep "\"port\"" | grep -o '[0-9][0-9]*')
     if curl -s -x socks5://localhost:${virtualPort} --retry 2 ifconfig.me >/dev/null 2>&1; then
@@ -239,7 +228,6 @@ check() {
 }
 
 _addRule() {
-    _redir_log
     local srcPort=${1:?'missing src port'}
     local destPort=${2:?'missing dest port'}
     echo "Add rule: redirect ${srcPort} to ${destPort}"
@@ -265,7 +253,6 @@ _addRule() {
 }
 
 _clearRule() {
-    _redir_log
     echo "Clear rule..."
     # delete reference
     echo "  1.> Delete reference"
@@ -283,7 +270,6 @@ _clearRule() {
 }
 
 _addCron() {
-    _redir_log
     local tmpCron=/tmp/cron.tmp$(date +%FT%T)
     if crontab -l 2>/dev/null | grep -q "${beginCron}"; then
         echo "Already exist,quit."
@@ -316,7 +302,6 @@ _addCron() {
 }
 
 _delCron() {
-    _redir_log
     (crontab -l 2>/dev/null | sed -e "/${beginCron}/,/${endCron}/d") | crontab -
 }
 
@@ -325,7 +310,6 @@ log() {
 }
 
 fetchSub() {
-    _redir_log
     cd ${fetcher_root}
     ./fetcher fetch
 
