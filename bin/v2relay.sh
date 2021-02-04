@@ -114,6 +114,10 @@ _restore_log(){
 
 _start_frontend_pre() {
     echo "start frontend pre..."
+    if [ ! -d ${v2ray_root} ];then
+        echo "Not found v2ray,install it first."
+        exit 1
+    fi
     ${scripts_root}/traffic.sh _addWatchPorts
 }
 
@@ -130,6 +134,10 @@ _stop_frontend_post() {
 
 _start_backend_pre() {
     echo "start v2backend pre..."
+    if [ ! -d ${v2ray_root} ];then
+        echo "Not found v2ray,install it first."
+        exit 1
+    fi
     if [ ! -e ${this}/../etc/v2backend.json ]; then
         echo "No etc/v2backend.json file."
         exit 1
