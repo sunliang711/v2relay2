@@ -194,7 +194,7 @@
             "port": 8006,
             "settings": {
                 "method": "aes-256-cfb",
-                "password": "800f6",
+                "password": "8006f",
                 "udp": true,
                 "level": 0,
                 "ota": false
