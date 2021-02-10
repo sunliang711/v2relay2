@@ -1,35 +1,130 @@
 #!/bin/bash
-
-rpath="$(readlink ${BASH_SOURCE})"
-if [ -z "$rpath" ];then
-    rpath=${BASH_SOURCE}
+if [ -z "${BASH_SOURCE}" ]; then
+    this=${PWD}
+    logfile="/tmp/$(%FT%T).log"
+else
+    rpath="$(readlink ${BASH_SOURCE})"
+    if [ -z "$rpath" ]; then
+        rpath=${BASH_SOURCE}
+    fi
+    this="$(cd $(dirname $rpath) && pwd)"
+    logfile="/tmp/$(basename ${BASH_SOURCE}).log"
 fi
 
-root="$(cd $(dirname $rpath) && pwd)"
-cd "$root"
+export PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-need(){
-    if ! command -v $1 >/dev/null 2>&1;then
-        echo "need $1"
+user="${SUDO_USER:-$(whoami)}"
+home="$(eval echo ~$user)"
+
+# export TERM=xterm-256color
+
+# Use colors, but only if connected to a terminal, and that terminal
+# supports them.
+if which tput >/dev/null 2>&1; then
+  ncolors=$(tput colors 2>/dev/null)
+fi
+if [ -t 1 ] && [ -n "$ncolors" ] && [ "$ncolors" -ge 8 ]; then
+    RED="$(tput setaf 1)"
+    GREEN="$(tput setaf 2)"
+    YELLOW="$(tput setaf 3)"
+    BLUE="$(tput setaf 4)"
+    CYAN="$(tput setaf 5)"
+    BOLD="$(tput bold)"
+    NORMAL="$(tput sgr0)"
+else
+    RED=""
+    GREEN=""
+    YELLOW=""
+    CYAN=""
+    BLUE=""
+    BOLD=""
+    NORMAL=""
+fi
+
+_err(){
+    echo "$*" >&2
+}
+
+_command_exists(){
+    command -v "$@" > /dev/null 2>&1
+}
+
+rootID=0
+
+_runAsRoot(){
+    cmd="${*}"
+    bash_c='bash -c'
+    if [ "${EUID}" -ne "${rootID}" ];then
+        if _command_exists sudo; then
+            bash_c='sudo -E bash -c'
+        elif _command_exists su; then
+            bash_c='su -c'
+        else
+            cat >&2 <<-'EOF'
+			Error: this installer needs the ability to run commands as root.
+			We are unable to find either "sudo" or "su" available to make this happen.
+			EOF
+            exit 1
+        fi
+    fi
+    # only output stderr
+    (set -x; $bash_c "${cmd}" >> ${logfile} )
+}
+
+_run(){
+    # only output stderr
+    (set -x; bash -c "${cmd}" >> ${logfile})
+}
+
+function _root(){
+    if [ ${EUID} -ne ${rootID} ];then
+        echo "Need run as root!"
+        echo "Requires root privileges."
+        exit 1
+    fi
+}
+
+ed=vi
+if _command_exists vim; then
+    ed=vim
+fi
+if _command_exists nvim; then
+    ed=nvim
+fi
+# use ENV: editor to override
+if [ -n "${editor}" ];then
+    ed=${editor}
+fi
+
+_need(){
+    local cmd=${1}
+    if ! _command_exists "${cmd}";then
+        _err "Need command ${cmd}"
         exit 1
     fi
 }
 
 install(){
-    dest=${1:?'missing install location'}
+    echo "Log file: ${logfile}"
+    _need curl
+    _need unzip
+
+    local dest=${1:?'missing install location'}
     if [ ! -d ${dest} ];then
-        echo "Create ${dest}"
-        mkdir -p ${dest}
+        echo "Create ${dest}..."
+        (set -x; mkdir -p ${dest})
     fi
     dest="$(cd ${dest} && pwd)"
-    echo "install location: $dest"
+    if [ -d "${dest}/v2ray" ];then
+        echo "${YELLOW}v2ray executable already installed,skip${NORMAL}"
+        exit
+    fi
+    echo "Install location: $dest"
+
     version=${2:-4.32.1}
 
-    need curl
-    need unzip
-
     downloadDir=/tmp/v2ray-download
-    echo "downloadDir: $downloadDir"
+    echo "Download dir: $downloadDir"
     if [ ! -d "$downloadDir" ];then
         mkdir "$downloadDir"
     fi
@@ -61,8 +156,8 @@ install(){
         echo "Use ${downloadDir}/$zipfile cache file"
     fi
 
-    echo "unzip zipfile: $zipfile..."
-    unzip -d "$dest/v2ray" "$zipfile" || { echo "Extract v2ray zip file error"; exit 1; }
+    echo -n "Unzip zipfile: $zipfile..."
+    unzip -d "$dest/v2ray" "$zipfile" >/dev/null && { echo "OK"; } || { echo "Extract v2ray zip file error"; exit 1; }
 
 }
 

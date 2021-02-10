@@ -4,7 +4,7 @@ if [ -z "${BASH_SOURCE}" ]; then
     logfile="/tmp/$(%FT%T).log"
 else
     rpath="$(readlink ${BASH_SOURCE})"
-    if [ -z "$rpath" ]; then
+    if [ -z "$rpath"]; then
         rpath=${BASH_SOURCE}
     fi
     this="$(cd $(dirname $rpath) && pwd)"
@@ -71,6 +71,11 @@ _runAsRoot(){
     (set -x; $bash_c "${cmd}" >> ${logfile} )
 }
 
+_run(){
+    # only output stderr
+    (set -x; bash -c "${cmd}" >> ${logfile})
+}
+
 function _insert_path(){
     if [ -z "$1" ];then
         return
@@ -78,13 +83,11 @@ function _insert_path(){
     echo -e ${PATH//:/"\n"} | grep -c "^$1$" >/dev/null 2>&1 || export PATH=$1:$PATH
 }
 
-_run(){
-    # only output stderr
-    (set -x; bash -c "${cmd}" >> ${logfile})
-}
-
 function _root(){
-    if [ ${EUID} -ne ${rootID} ];then
+    if [ ${EUID
+        } -ne ${rootID
+        }
+    ];then
         echo "Need run as root!"
         echo "Requires root privileges."
         exit 1
@@ -100,73 +103,91 @@ if _command_exists nvim; then
 fi
 # use ENV: editor to override
 if [ -n "${editor}" ];then
-    ed=${editor}
+    ed=${editor
+}
 fi
 ###############################################################################
 # write your code below (just define function[s])
 # function is hidden when begin with '_'
 ###############################################################################
-_need(){
-    local cmd=${1}
-    if ! command -v $cmd >/dev/null 2>&1;then
-        echo "need $cmd"
-        exit 1
+# TODO
+rootDir="$(cd ${this}/.. && pwd)"
+
+_installFetcher() {
+    cd ${rootDir}
+    echo "Install fetcher..."
+    if [ -d fetcher ]; then
+        echo "${YELLOW}Already exist fetcher,skip${NORMAL}"
+        return
     fi
+    curl https://gitee.com/sunliang711/fetcher/raw/master/install.sh | bash -s ${rootDir}
+    sed -e "s|output_file: .*|output_file: /tmp/v2backend.json|" ${rootDir}/fetcher/fetcher.yaml >/tmp/fetcher.yaml
+    mv /tmp/fetcher.yaml ${rootDir}/fetcher/fetcher.yaml
+
+    _runAsRoot "systemctl daemon-reload"
 }
 
-install() {
-    _need unzip
-
-    bash ${this}/scripts/installV2frontend.sh install || { echo "Install v2frontend failed!" exit 1; }
-    bash ${this}/scripts/installV2backend.sh install || { echo "Install v2backend failed!" exit 1; }
+_installFastestPort() {
+    cd ${rootDir}
+    if [ -d fastest-port ]; then
+        echo "${YELLOW}Already exist fastest-port,skip${NORMAL}"
+        return
+    fi
+    echo "Install fastest-port..."
+    curl -fsSL https://gitee.com/sunliang711/fastest-port/raw/master/install.sh | bash -s install ${rootDir}
 }
 
+install(){
+    bash ${this}/installV2ray.sh "${rootDir}" || { echo "Install v2ray failed!"; exit 1; }
 
+    cat ${this}/backend_msg
+    # install service
+    local start_pre="${rootDir}/bin/v2relay.sh _start_backend_pre"
+    local start="${rootDir}/v2ray/v2ray -c ${rootDir}/etc/v2backend.json"
+    local start_post="${rootDir}/bin/v2relay.sh _start_backend_post"
+    local stop_post="${rootDir}/bin/v2relay.sh _stop_backend_post"
+    local pwd="${rootDir}/bin"
+    sed -e "s|<START_PRE>|${start_pre}|g" \
+        -e "s|<START>|${start}|g" \
+        -e "s|<START_POST>|${start_post}|g" \
+        -e "s|<STOP_POST>|${stop_post}|g" \
+        -e "s|<USER>|${user}|g" \
+        -e "s|<PWD>|${pwd}|g" \
+        ${rootDir}/template/v2backend.service >/tmp/v2backend.service
+    _runAsRoot "mv /tmp/v2backend.service /etc/systemd/system"
+    _runAsRoot "systemctl daemon-reload"
 
-uninstall() {
-    _runAsRoot "systemctl stop v2frontend.service"
-    _runAsRoot "systemctl stop v2backend.service"
+    echo "${green}Edit fetcher.yaml file to update subscription URL${NORMAL}"
+    echo "Add ${rootDir}/bin to PATH manaually"
+    _insert_path "${rootDir}/bin"
 
-    cd ${this}
-    echo "Remove fetcher..."
-    /bin/rm -rf fetcher
-    echo "Remove v2ray..."
-    /bin/rm -rf v2ray
-    echo "Remove fastest-port..."
-    /bin/rm -rf fastest-port
-
-    echo "Remove v2frontend.service"
-    _runAsRoot "/bin/rm -rf /etc/systemd/system/v2frontend.service"
-    echo "Remove v2backend.service"
-    _runAsRoot "/bin/rm -rf /etc/systemd/system/v2backend.service"
-
-    _insert_path ${this}/bin
-
+    _installFetcher
+    _installFastestPort
 }
 
-em() {
+em(){
     $ed $0
 }
 
 ###############################################################################
 # write your code above
 ###############################################################################
-function _help() {
-    cat <<EOF2
+function _help(){
+    cd "${this}"
+    cat<<EOF2
 Usage: $(basename $0) ${bold}CMD${reset}
 
 ${bold}CMD${reset}:
 EOF2
     # perl -lne 'print "\t$1" if /^\s*(\w+)\(\)\{$/' $(basename ${BASH_SOURCE})
     # perl -lne 'print "\t$2" if /^\s*(function)?\s*(\w+)\(\)\{$/' $(basename ${BASH_SOURCE}) | grep -v '^\t_'
-    perl -lne 'print "\t$2" if /^\s*(function)?\s*(\w+)\(\)\s*\{$/' $(basename ${BASH_SOURCE}) | perl -lne "print if /^\t[^_]/"
+    perl -lne 'print "\t$2" if /^\s*(function)?\s*(\w+)\(\)\{$/' $(basename ${BASH_SOURCE}) | perl -lne "print if /^\t[^_]/"
 }
 
 case "$1" in
-"" | -h | --help | help)
-    _help
-    ;;
-*)
-    "$@"
-    ;;
+     ""|-h|--help|help)
+        _help
+        ;;
+    *)
+        "$@"
 esac

@@ -208,7 +208,7 @@
                 {
                     "address": "localhost",
                     // BEGIN virtual port
-                    "port": 8888
+                    "port": 7891
                     // END virtual port
                 }
             ]
